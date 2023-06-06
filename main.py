@@ -4,11 +4,14 @@ import numpy as np
 
 
 class Jacobian:
+    # init_funcs - массив лямбд
+    # arity - int, арность функций
     def __init__(self, init_funcs, arity):
         self.funcs = init_funcs
         self.eps = 0.01
         self.body = np.asarray([[0. for _ in range(arity)] for _ in range(len(init_funcs))])
 
+    # point - точка в виде массива
     def calc_body(self, point):
         for i in range(len(self.funcs)):
             for j in range(len(point)):
@@ -27,6 +30,8 @@ class Jacobian:
         return np.transpose(self.body)
 
 
+# point - точка в виде массива
+# funcs - массив лямбд
 def func_wrap(point, funcs):
     result = np.array([0. for _ in range(len(funcs))])
     for i in range(len(funcs)):
@@ -34,6 +39,8 @@ def func_wrap(point, funcs):
     return result
 
 
+# start_point - точка в виде массива
+# funcs - массив лямбд
 def min_point_by_gauss_newton(start_point, funcs):
     start_point = np.asarray(start_point)
     J = Jacobian(funcs, len(start_point))
