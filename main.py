@@ -105,7 +105,8 @@ def hessian(f):
     return calc
 
 
-def min_point_by_trust_region_func(f, x_k, get_p, recalc_m, delta=1., delta_max=10., eps=0.001, eta=0.2, max_steps=1000):
+def min_point_by_trust_region_func(f, x_k, get_p, recalc_m, delta=1., delta_max=10., eps=0.001, eta=0.2,
+                                   max_steps=1000):
     g = grad(f)
     B = hessian(f)(x_k)
     for i in range(max_steps):
@@ -154,31 +155,34 @@ def get_p_by_dogleg(f, g, B, x_k, delta):
     #         l = mid
     #         norm = mid_norm
 
-    a = 0.
-    b = 0.
-    c = 0.
-    for i in range(len(x_k)):
-        for j in range(len(x_k)):
-            a += (p_u[i] - p_b[i]) ** 2
-            b += (p_u[i] - p_b[i]) * p_b[i]
-            c += (p_b[i]) ** 2
-    c -= delta ** 2
+    a = np.linalg.norm(p_b - p_u) ** 2
+    b = 2 * np.dot(p_u, p_b - p_u)
+    c = np.linalg.norm(p_u) ** 2 - delta * delta
+    # a = 0.
+    # b = 0.
+    # c = 0.
+    # for i in range(len(x_k)):
+    #     a += (p_b[i] - p_u[i]) ** 2
+    #     b += (p_b[i] - p_u[i]) * p_u[i]
+    #     c += (p_u[i]) ** 2
+    # b *= 2
+    # c -= delta ** 2
     D = b ** 2 - 4. * a * c
-    if abs(D) <= 0.00000000001: D = 0
+    if abs(D) <= 0.009: D = 0
     print(a)
     print(b)
     print(c)
     print(D)
     x1 = (-b + math.sqrt(D)) / 2.
     x2 = (-b - math.sqrt(D)) / 2.
-    tau1 = 2 - x1
-    tau2 = 2 - x2
+    tau1 = x1 + 1
+    tau2 = x2 + 1
     real_tau = tau1 if (0 <= tau1 <= 1) or (1 <= tau1 <= 2) else tau2
     return real_tau * p_u if (0 <= real_tau <= 1) else p_u + (real_tau - 1) * (p_b - p_u)
 
 
 print(min_point_by_trust_region_func(
-    lambda x: (x[0] - 5.) ** 2 + (x[1] + 6.) ** 2,
+    lambda x: (x[0] - 5.) * (x[0] - 5.) + (x[1] + 6.) * (x[1] + 6.),
     np.array((10., 10.)),
     get_p_by_dogleg, recalc_m_for_dogleg
 ))
