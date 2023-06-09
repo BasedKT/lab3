@@ -129,7 +129,7 @@ def min_point_by_trust_region_func(f, x_k, get_p, recalc_m, delta=1., delta_max=
 
 
 def recalc_m_for_dogleg(f, g, B, x):
-    return lambda p: f(x) + g(x).T @ p
+    return lambda p: f(x) + g(x).T @ p + 0.5 * p.T @ B(x) @ p
 
 
 def get_p_by_dogleg(f, g, B, x_k, delta):
@@ -206,3 +206,53 @@ print(min_point_by_trust_region_func(
 ))
 
 print(hessian(lambda x: (x[0] - 5.) * (x[0] - 5.) + (x[1] + 6.) * (x[1] + 6.))(np.array((10., 10.))))
+
+wolfe_cond_template = lambda c1, c2, x, func, gk: lambda a, b: not (
+        (func.value(x - ((a + b) / 2) * gk) <= (func.value(x) + c1 * ((a + b) / 2) * np.dot(gk, -gk))) and (
+        np.dot(func.grad(x - ((a + b) / 2) * gk), -gk) >= c2 * np.dot(gk, -gk)))
+
+wolfe_cond = lambda: ""
+
+
+def dichotomy(func, a_1, a_2, eps, delt, is_wolfe=False):
+    cond = lambda a, b: abs(a - b) >= eps
+    if is_wolfe:
+        cond = wolfe_cond
+    while cond(a_1, a_2):
+        new_a_1 = (a_1 + a_2) / 2 - delt
+        new_a_2 = (a_1 + a_2) / 2 + delt
+        fv1 = func.value(new_a_1)
+        fv2 = func.value(new_a_2)
+        if fv2 > fv1:
+            a_2 = new_a_2
+        elif fv2 < fv1:
+            a_1 = new_a_1
+        else:
+            a_1 = new_a_1
+            a_2 = new_a_2
+    return (a_1 + a_2) / 2
+
+def right_border_calc(func):
+    right_start = 0.0000001
+    zero = func.value(0)
+    while zero >= func.value(right_start):
+        right_start *= 2
+
+    return right_start
+
+def calc_min_by_bfgs(x, f):
+    I = np.eye(len(x))
+    H = I
+    grad_prev = grad(f)(x)
+    p = -H * grad_prev
+    x_prev = x
+    x += dichotomy(f,0, r) * p
+    # в ск засунуть разность нового х и переданного
+    # в ук засунуть разность градиента при новом х и при старом           также сохранить градиент и икс текущие
+    for i in range(10000):
+        y_k = grad(f)(x) - grad(f)(x_prev)
+        s_k = x - x_prev
+        ro_k = 1 / (y_k.T * s_k)
+        H = (I - ro_k @ s_k @ y_k.T) @ H @ (I - ro_k @ y_k @ s_k.T) + ro_k @ s_k @ s_k.T
+        p = -H @ grad(f)(x)
+        x -= alpa()
