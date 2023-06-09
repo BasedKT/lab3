@@ -107,9 +107,9 @@ def hessian(f):
 
 def min_point_by_trust_region_func(f, x_k, get_p, recalc_m, delta=1., delta_max=10., eps=0.001, eta=0.2,
                                    max_steps=1000):
-    div_eps = 0.00000001
+    div_eps = 0.0000000000000000000000000000000000001
     g = grad(f)
-    B = hessian(f)(x_k)
+    B = hessian(f)
     for i in range(max_steps):
         print(x_k)
         p_k = get_p(f, g, B, x_k, delta)
@@ -134,7 +134,7 @@ def recalc_m_for_dogleg(f, g, B, x):
 
 def get_p_by_dogleg(f, g, B, x_k, delta):
     g_comp = g(x_k)
-    B_comp = B
+    B_comp = B(x_k)
     p_b = -np.linalg.inv(B_comp) @ g_comp
 
     if np.linalg.norm(p_b) <= delta:
