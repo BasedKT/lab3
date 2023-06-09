@@ -92,14 +92,14 @@ def func3(args):
 # print([[1., 2.], [0., 0.]] @ np.linalg.pinv([[1., 2.], [0., 0.]]))
 
 # =======================================================DOG=LEG=========================================================
-# придумать что делать если гессиан не положительно определенный
+# NOTE: придумать что делать если гессиан не положительно определенный
 
 def hessian(f):
     def calc(x):
         B = np.asarray([[0. for _ in range(len(x))] for _ in range(len(x))])
         for i in range(len(x)):
             for j in range(len(x)):
-                B[i][j] = derivative(lambda x_tmp: derivative(f, x_tmp, i), x, j)
+                B[i][j] = derivative(lambda x_tmp: derivative(f, x_tmp, j), x, i)
         return B
 
     return calc
@@ -205,4 +205,4 @@ print(min_point_by_trust_region_func(
     get_p_by_dogleg, recalc_m_for_dogleg
 ))
 
-# print(hessian(lambda x: (x[0] - 5.) * (x[0] - 5.) + (x[1] + 6.) * (x[1] + 6.))(np.array((10., 10.))))
+print(hessian(lambda x: (x[0] - 5.) * (x[0] - 5.) + (x[1] + 6.) * (x[1] + 6.))(np.array((10., 10.))))
