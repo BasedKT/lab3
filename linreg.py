@@ -1,3 +1,4 @@
+import random
 from math import exp
 
 import matplotlib.pyplot as plt
@@ -138,14 +139,10 @@ def lrs_handler(lrs, epoch_update=20):
             return lrs_exp(0.1)
 
 
-def poly_array(coeffs):
-    return np.array([lambda x, i=i: coeffs[i] * (x ** i) for i in range(len(coeffs))])
-
-
 def visualise_linear(f, points, title, x_label="x", y_label="y"):
     values = np.transpose(points)
-    X = np.linspace(min(values[0]) - 20, max(values[0]) + 20, 100)
-    Y = np.linspace(min(values[1]) - 20, max(values[1]) + 20, 100)
+    X = np.linspace(min(values[0]) - 10, max(values[0]) + 10, 100)
+    Y = np.linspace(min(values[1]) - 10, max(values[1]) + 10, 100)
     Z = [[f(np.array([X[i], Y[j]])) for i in range(len(X))] for j in range(len(Y))]
     plt.contour(X, Y, Z, 30)
 
@@ -157,3 +154,31 @@ def visualise_linear(f, points, title, x_label="x", y_label="y"):
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.show()
+
+
+def poly_array(coeffs):
+    return np.array([lambda x, i=i: coeffs[i] * (x ** i) for i in range(len(coeffs))])
+
+
+def poly(poly_arr):
+    return lambda x: sum([poly_arr[i](x) for i in range(len(poly_arr))])
+
+
+def generate_data(num_of_points, dimension, coeffs_left, coeffs_right, x_left, x_right, deviation, own_coeffs=None):
+    coeffs = own_coeffs
+    if coeffs == None:
+        coeffs = np.array([float(random.randint(coeffs_left, coeffs_right)) for i in range(dimension + 1)])
+
+    X = [random.uniform(x_left, x_right) for _ in range(num_of_points)]
+    Y = [poly(poly_array(coeffs))(X[i]) + random.uniform(-deviation, +deviation) for i in range(num_of_points)]
+
+    return [np.array(X), np.array(Y), coeffs]
+
+
+def gen_linear_reg(dimension, num_of_points, coeffs_left, coeffs_right, x_left, x_right, deviation, own_coeffs=None):
+    T = np.array(poly_array(np.ones(dimension + 1)))
+    X, Y, coeffs = generate_data(num_of_points, dimension, coeffs_left, coeffs_right, x_left, x_right, deviation,
+                                 own_coeffs)
+    W = np.ones(len(coeffs))
+
+    return LinearRegression(T, W, X, Y)
