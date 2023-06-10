@@ -79,7 +79,7 @@ def trust_region(f, x_k, get_p, recalc_m, delta=1., delta_max=10., eps=0.001, et
     g = grad(f)
     B = hessian(f)
     points = [np.copy(x_k)]
-    for i in range(max_steps):
+    for k in range(max_steps):
         p_k = get_p(f, g, B, x_k, delta)
         m_k = recalc_m(f, g, B, x_k)
         ro_k = (f(x_k) - f(x_k + p_k)) / (m_k(np.zeros(len(x_k))) - m_k(p_k) + div_eps)
@@ -99,7 +99,7 @@ def trust_region(f, x_k, get_p, recalc_m, delta=1., delta_max=10., eps=0.001, et
     if store_points:
         return points
     else:
-        return x_k
+        return [x_k, f(x_k)]
 
 
 def m_for_dogleg(f, g, B, x_k):
@@ -138,7 +138,7 @@ def dogleg(f, x_k, delta=1., delta_max=10., eps=0.001, eta=0.2, max_steps=1000, 
 
 wolfe_cond_template = lambda c1, c2, x, func, gk: lambda a, b: not (
         (func(x - ((a + b) / 2) * gk) <= (func(x) + c1 * ((a + b) / 2) * np.dot(gk, -gk))) and (
-        np.dot(grad(func)(x - ((a + b) / 2) * gk), -gk) >= c2 * np.dot(gk, -gk)))
+            np.dot(grad(func)(x - ((a + b) / 2) * gk), -gk) >= c2 * np.dot(gk, -gk)))
 
 wolfe_cond = lambda: ""
 
@@ -180,14 +180,14 @@ def bfgs(f, x, breaking_eps=0.0001, store_points=False):
     x_prev = 0
     H = np.copy(I)
 
-    for i in range(10000):
+    for k in range(1000):
         grad_tmp = np.array(grad(f)(x))
         y_k = np.array(grad_tmp - grad_prev)
         grad_prev = np.copy(grad_tmp)
         s_k = np.array(x - x_prev)
         ro_k = 1 / (y_k.T @ s_k)
 
-        if i != 0:
+        if k != 0:
             H = (I - ro_k * s_k @ y_k.T) @ H @ (I - ro_k * y_k @ s_k.T) + ro_k * s_k @ s_k.T
         p = np.array(-H @ grad_prev)
         x_prev = np.copy(x)
@@ -204,6 +204,77 @@ def bfgs(f, x, breaking_eps=0.0001, store_points=False):
     if store_points:
         return points
     else:
-        return x
+        return [x, f(x)]
 
 
+def lbfgs(f, x, breaking_eps=0.00001, m=10, store_points=False):
+    global wolfe_cond
+    points = [np.copy(x)]
+
+    prev_y = []
+    prev_s = []
+    prev_ro = []
+    size = 0
+    grad_prev = 0
+    x_prev = 0
+    gamma = 1.
+
+    eps_divide = 0.00001
+
+    for k in range(1000):
+        grad_tmp = np.array(grad(f)(x))
+        y_k = np.array(grad_tmp - grad_prev)
+        grad_prev = np.copy(grad_tmp)
+        s_k = np.array(x - x_prev)
+        ro_k = 1 / ((y_k.T @ s_k) + eps_divide)
+
+        # if k != 0:
+        #     prev_y.append(y_k)
+        #     prev_s.append(s_k)
+        #     prev_ro.append(ro_k)
+        #     size = size + 1
+        #     if size == m + 1:
+        #         prev_y.pop(0)
+        #         prev_s.pop(0)
+        #         prev_ro.pop(0)
+        #         size = size - 1
+        #     gamma = (s_k.T @ y_k) / ((y_k.T @ y_k) + eps_divide)
+
+        q = grad_prev
+        for i in range(size):
+            alpha_i = prev_ro[size - 1 - i] * prev_s[size - 1 - i].T @ prev_y[size - 1 - i]
+            q = q - alpha_i * prev_y[size - 1 - i]
+        r = gamma * q
+        for i in range(size):
+            beta_i = prev_ro[i] * prev_y[i].T @ r
+            alpha_i = prev_ro[i] * prev_s[i].T @ prev_y[i]
+            r = r + prev_s[i] * (alpha_i - beta_i)
+        p = -r
+
+        x_prev = np.copy(x)
+        wolfe_cond = wolfe_cond_template(0.000001, 0.999999, x, f, grad_prev)
+        phi = lambda a: f(x + a * p)
+        x += dichotomy(phi, 0., right_border_calc(phi), is_wolfe=True) * p
+
+        if k != 0:
+            prev_y.append(y_k)
+            prev_s.append(s_k)
+            prev_ro.append(ro_k)
+            size = size + 1
+            if size == m + 1:
+                prev_y.pop(0)
+                prev_s.pop(0)
+                prev_ro.pop(0)
+                size = size - 1
+            gamma = (s_k.T @ y_k) / ((y_k.T @ y_k) + eps_divide)
+
+        if store_points:
+            points.append(np.copy(x))
+
+        if np.linalg.norm(x_prev - x) < breaking_eps:
+            break
+
+    if store_points:
+        return points
+    else:
+        return [x, f(x)]
