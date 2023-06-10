@@ -23,16 +23,11 @@ def grad(f, delt=0.01):
     return grad_calc
 
 
-class Jacobian:
-    def __init__(self, funcs, arity):
-        self.body = np.array([[0. for _ in range(arity)] for _ in range(len(funcs))])
-        self.funcs = funcs
+def jacobian(funcs):
+    def calc(point):
+        return np.array([[derivative(funcs[i], point, j) for j in range(len(point))] for i in range(len(funcs))])
 
-    # point - точка в виде массива
-    def calc_Jacobian(self, point):
-        for i in range(len(self.funcs)):
-            for j in range(len(point)):
-                self.body[i][j] = derivative(self.funcs[i], point, j)
+    return calc
 
 
 def get_R(point, funcs):
@@ -46,11 +41,11 @@ def gauss_newton(start_point, funcs, max_steps=10000, store_points=False):
     points = [np.copy(start_point)]
     start_point = np.array(start_point)
     x_prev = start_point
-    J = Jacobian(funcs, len(start_point))
+    J_func = jacobian(funcs)
     f = lambda x: sum([funcs[k](x) ** 2 for k in range(len(funcs))]) / 2
     for i in range(max_steps):
-        J.calc_Jacobian(start_point)
-        p = - np.linalg.inv(J.body.T @ J.body) @ J.body.T @ get_R(start_point, funcs)
+        J = J_func(start_point)
+        p = - np.linalg.inv(J.T @ J) @ J.T @ get_R(start_point, funcs)
         alpha = dichotomy(lambda a: f(start_point + a * p), 0., right_border_calc(lambda a: f(start_point + a * p)))
         start_point = start_point + alpha * p
         if np.linalg.norm(start_point - x_prev) < 0.00001:
