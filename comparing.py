@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 from excel import ExcellSaver
 from linreg import sgd_handler, Methods, visualise_approximation, gen_linear_reg
-from main import dogleg, gauss_newton, bfgs
+from main import dogleg, gauss_newton, bfgs, lbfgs
 
 
 class Metrics:
@@ -114,6 +114,16 @@ def bfgs_vs_prev():
     linreg_comparing(calc_points, "BFGS", visualize_prev_methods=True)
 
 
+def lbfgs_vs_prev():
+    global excel_saver
+
+    def calc_points(start_x, linreg):
+        return lbfgs(linreg.loss, start_x, store_points=True)
+
+    excel_saver.add_new_sheet(["method", "count steps", "loss", "memory", "time"], "LBFGS vs Prev")
+    linreg_comparing(calc_points, "LBFGS", visualize_prev_methods=False)
+
+
 def comparing_between(funcs, methods, titles, is_array_funcs=False):
     global excel_saver
 
@@ -180,7 +190,8 @@ excel_saver = ExcellSaver()
 # gauss_newton_vs_prev()
 # dogleg_vs_prev()
 # bfgs_vs_prev()
-gauss_newton_vs_dogleg()
+# lbfgs_vs_prev()
+# gauss_newton_vs_dogleg()
 # gauss_newton_vs_bfgs()
 # dogleg_vs_bfgs()
-excel_saver.create_excel("metrics.xlsx")
+# excel_saver.create_excel("metrics.xlsx")
