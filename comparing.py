@@ -28,7 +28,7 @@ def visualise(f, points, title, x_label="x", y_label="y"):
     plt.plot(values[0][0], values[1][0], 'og')
     plt.plot(values[0][-1], values[1][-1], 'or')
     plt.title(title)
-    plt.legend(['Linear Regression', 'Start point', 'End point'])
+    plt.legend(['Optimization', 'Start point', 'End point'])
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.show()
