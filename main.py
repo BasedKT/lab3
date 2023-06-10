@@ -37,28 +37,29 @@ def get_R(point, funcs):
     return np.array(result)
 
 
-def gauss_newton(start_point, funcs, max_steps=10000, store_points=False):
-    points = [np.copy(start_point)]
-    start_point = np.array(start_point)
-    x_prev = start_point
+def gauss_newton(cur_point, funcs, max_steps=10000, store_points=False):
+    points = [np.copy(cur_point)]
+    cur_point = np.array(cur_point)
+    x_prev = cur_point
     J_func = jacobian(funcs)
     f = lambda x: sum([funcs[k](x) ** 2 for k in range(len(funcs))]) / 2
     for i in range(max_steps):
-        J = J_func(start_point)
-        p = - np.linalg.inv(J.T @ J) @ J.T @ get_R(start_point, funcs)
-        alpha = dichotomy(lambda a: f(start_point + a * p), 0., right_border_calc(lambda a: f(start_point + a * p)))
-        start_point = start_point + alpha * p
-        if np.linalg.norm(start_point - x_prev) < 0.00001:
+        J = J_func(cur_point)
+        p = - np.linalg.inv(J.T @ J) @ J.T @ get_R(cur_point, funcs)
+        phi = lambda a: f(cur_point + a * p)
+        alpha = dichotomy(phi, 0., right_border_calc(phi))
+        cur_point = cur_point + alpha * p
+        if np.linalg.norm(cur_point - x_prev) < 0.00001:
             break
-        x_prev = start_point
+        x_prev = cur_point
 
         if store_points:
-            points.append(np.copy(start_point))
+            points.append(np.copy(cur_point))
 
     if store_points:
         return points
     else:
-        return [start_point, f(start_point)]
+        return [cur_point, f(cur_point)]
 
 
 def hessian(f):
@@ -173,30 +174,26 @@ def right_border_calc(func):
 def bfgs(f, x, breaking_eps=0.0001, store_points=False):
     global wolfe_cond
     points = [np.copy(x)]
-    H = np.eye(len(x))
-    grad_prev = np.array(grad(f)(x))
-    p = np.array(-H @ grad_prev)
-    x_prev = np.copy(x)
-    eps = 0.01
-    delt = 0.0001
-    wolfe_cond = wolfe_cond_template(0.001, 0.999, x_prev, f, grad_prev)
-    alpha = dichotomy(lambda a: f(x + a * p), 0., right_border_calc(lambda a: f(x + a * p)),
-                      eps, delt,
-                      is_wolfe=True)
-    x += alpha * p
+    I = np.eye(len(x))
+
+    grad_prev = 0
+    x_prev = 0
+    H = np.copy(I)
+
     for i in range(10000):
-        # print(x)
         grad_tmp = np.array(grad(f)(x))
         y_k = np.array(grad_tmp - grad_prev)
+        grad_prev = np.copy(grad_tmp)
         s_k = np.array(x - x_prev)
         ro_k = 1 / (y_k.T @ s_k)
-        H = (np.eye(len(x)) - ro_k * s_k @ y_k.T) @ H @ (np.eye(len(x)) - ro_k * y_k @ s_k.T) + ro_k * s_k @ s_k.T
-        p = np.array(-H @ grad_tmp)
+
+        if i != 0:
+            H = (I - ro_k * s_k @ y_k.T) @ H @ (I - ro_k * y_k @ s_k.T) + ro_k * s_k @ s_k.T
+        p = np.array(-H @ grad_prev)
         x_prev = np.copy(x)
-        grad_prev = np.copy(grad_tmp)
         wolfe_cond = wolfe_cond_template(0.001, 0.999, x, f, grad_prev)
-        x += abs(dichotomy(lambda a: f(x + a * p), 0., right_border_calc(lambda a: f(x + a * p)), eps, delt,
-                           is_wolfe=True)) * p
+        phi = lambda a: f(x + a * p)
+        x += dichotomy(phi, 0., right_border_calc(phi), is_wolfe=True) * p
 
         if store_points:
             points.append(np.copy(x))
@@ -208,3 +205,5 @@ def bfgs(f, x, breaking_eps=0.0001, store_points=False):
         return points
     else:
         return x
+
+
