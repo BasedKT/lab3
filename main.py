@@ -65,6 +65,7 @@ def gauss_newton(start_point, funcs, max_steps=10000, store_points=False):
     else:
         return [start_point, f(start_point)]
 
+
 def hessian(f):
     def calc(x):
         B = np.asarray([[0. for _ in range(len(x))] for _ in range(len(x))])
