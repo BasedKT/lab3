@@ -1,10 +1,9 @@
 import random
+from enum import Enum
 from math import exp
 
 import matplotlib.pyplot as plt
-
 import numpy as np
-from enum import Enum
 
 Methods = Enum('Methods', ['Classic', 'Momentum', 'AdaGrad', 'RMSprop', 'Adam', 'Nesterov'])
 Regularization = Enum('Regularization', ['WithoutRegularization', 'L1', 'L2', 'Elastic'])
@@ -139,20 +138,17 @@ def lrs_handler(lrs, epoch_update=20):
             return lrs_exp(0.1)
 
 
-def visualise_linear(f, points, title, x_label="x", y_label="y"):
-    values = np.transpose(points)
-    X = np.linspace(min(values[0]) - 10, max(values[0]) + 10, 100)
-    Y = np.linspace(min(values[1]) - 10, max(values[1]) + 10, 100)
-    Z = [[f(np.array([X[i], Y[j]])) for i in range(len(X))] for j in range(len(Y))]
-    plt.contour(X, Y, Z, 30)
-
-    plt.plot(values[0], values[1], marker='.')
-    plt.plot(values[0][0], values[1][0], 'og')
-    plt.plot(values[0][-1], values[1][-1], 'or')
+def visualise_approximation(linreg, title):
+    x = np.linspace(min(linreg.X), max(linreg.X), 1000)
+    y = sum([linreg.W[i] * (x ** i) for i in range(len(linreg.W))])
+    analys_w = linreg.analytical_solution()
+    analys_y = sum([analys_w[i] * (x ** i) for i in range(len(analys_w))])
+    plt.plot(x, y, 'r')
+    plt.plot(x, analys_y, 'b--')
+    plt.plot(linreg.X, linreg.Y, 'og', linestyle='None')
+    plt.legend(['Predict solution', 'Analytics solution', 'Train data'])
+    plt.xlabel("x")
     plt.title(title)
-    plt.legend(['Linear Regression', 'Start point', 'End point'])
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
     plt.show()
 
 
