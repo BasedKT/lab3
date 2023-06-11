@@ -193,7 +193,7 @@ def bfgs(f, x, breaking_eps=0.0001, store_points=False):
         x_prev = np.copy(x)
         wolfe_cond = wolfe_cond_template(0.001, 0.999, x, f, grad_prev)
         phi = lambda a: f(x + a * p)
-        x += dichotomy(phi, 0., right_border_calc(phi), is_wolfe=True) * p
+        x += dichotomy(phi, 0., right_border_calc(phi), is_wolfe=False) * p
 
         if store_points:
             points.append(np.copy(x))
@@ -254,7 +254,7 @@ def lbfgs(f, x, breaking_eps=0.00001, m=10, store_points=False):
         x_prev = np.copy(x)
         wolfe_cond = wolfe_cond_template(0.000001, 0.999999, x, f, grad_prev)
         phi = lambda a: f(x + a * p)
-        x += dichotomy(phi, 0., right_border_calc(phi), is_wolfe=False) * p
+        x += dichotomy(phi, 0., right_border_calc(phi), is_wolfe=True) * p
 
         if k != 0:
             prev_y.append(y_k)
