@@ -119,14 +119,14 @@ def p_by_dogleg(f, g, B, x_k, delta_k):
     if np.linalg.norm(p_u) <= delta_k:
         p_delt = p_b - p_u
         a = np.linalg.norm(p_delt)
-        b = 2 * p_delt.T @ p_b
-        c = np.linalg.norm(p_b)
+        b = 2 * p_delt.T @ p_u
+        c = np.linalg.norm(p_u) - (delta_k ** 2)
         D = (b ** 2 - 4 * a * c)
         if D < 0:
             D = 0
         sqrt_d = math.sqrt(D)
         alpha = (-b + sqrt_d) / (2 * a)
-        return p_u + (p_delt / np.linalg.norm(p_delt)) * alpha
+        return p_u + p_delt * alpha
     else:
         return -(delta_k * (grad_k / np.linalg.norm(grad_k)))
 
