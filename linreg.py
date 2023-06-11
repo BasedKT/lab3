@@ -69,6 +69,7 @@ def sgd(lin_reg, lr, lrs, batch, max_num_of_step, beta_1, beta_2, eps_adam, is_c
     V = np.zeros(len(lin_reg.W))
     S = np.zeros(len(lin_reg.W))
     lrs_func = lrs_handler(lrs)
+    prev_loss = lin_reg.loss(lin_reg.W)
     while True:
         i += 1
 
@@ -92,6 +93,11 @@ def sgd(lin_reg, lr, lrs, batch, max_num_of_step, beta_1, beta_2, eps_adam, is_c
         if store_points:
             lin_reg.W_points.append(np.copy(lin_reg.W))
         lin_reg.loss_values.append(loss_W)
+
+        if abs(prev_loss - loss_W) < 0.001:
+            break
+        prev_loss = loss_W
+
         if i >= max_num_of_step:
             break
 

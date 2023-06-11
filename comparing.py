@@ -22,7 +22,7 @@ def visualise(f, points, title, x_label="x", y_label="y"):
     X = np.linspace(min(values[0]) - 10, max(values[0]) + 10, 100)
     Y = np.linspace(min(values[1]) - 10, max(values[1]) + 10, 100)
     Z = [[f(np.array([X[i], Y[j]])) for i in range(len(X))] for j in range(len(Y))]
-    plt.contour(X, Y, Z, 30)
+    plt.contour(X, Y, Z, 50)
 
     plt.plot(values[0], values[1], marker='.')
     plt.plot(values[0][0], values[1][0], 'og')
@@ -69,14 +69,14 @@ def linreg_comparing(linreg_func, title, sheet_title, visualize_prev_methods=Tru
 
     excel_saver.add_new_sheet(["method", "count steps", "function", "loss", "memory", "time"], sheet_title)
 
-    count_2d_examples = 3
-    count_other_examples = 3
+    count_2d_examples = 1
+    count_other_examples = 1
     count_points = random.randint(30, 100)
     linregs_examples = []
     for i in range(count_2d_examples + count_other_examples):
         count_variables = 2 if i < count_2d_examples else random.randint(3, 6)
         linregs_examples.append((
-            gen_linear_reg(count_variables - 1, count_points, -2., 2., -2., 2., 4., ),
+            gen_linear_reg(count_variables - 1, count_points, -2., 2., -2., 2., 2.),
             str_func([1. for _ in range(count_variables)], [float(k) for k in range(count_variables)])
         ))
     lr = lambda *args: 0.01
@@ -149,120 +149,65 @@ def lbfgs_vs_prev(visualize_prev_methods=True):
     linreg_comparing(calc_points, "LBFGS", "LBFGS vs Prev", visualize_prev_methods=visualize_prev_methods)
 
 
-def nonlinear_comparing(nonlinreg_func, title, sheet_title):
-    pass
-
-
 def comparing_between(funcs, methods, titles, is_array_funcs=False):
     global excel_saver
 
-    start_points = [np.array([float(random.randint(5, 30)), float(random.randint(10, 50))]) for _ in range(10)]
     for f in funcs:
-        start_x = start_points[random.randint(0, len(start_points) - 1)]
+        start_x = [float(random.randint(30, 100)), float(random.randint(30, 100))]
         for i in range(len(methods)):
             metrics = get_metrics(lambda: methods[i](f, np.copy(start_x)))
-            real_func = lambda x: sum([f[i](x) ** 2 for i in range(len(f))]) if is_array_funcs else f
+            real_func = (lambda x: sum([f[i](x) ** 2 for i in range(len(f))])) if is_array_funcs else f
             excel_saver.add_row(
                 [titles[i], len(metrics.points), real_func(metrics.points[-1]), metrics.mem, metrics.time])
             visualise(real_func, metrics.points, titles[i])
 
 
-def gauss_newton_vs_dogleg():
+def gauss_newton_vs_others():
     global excel_saver
 
-    excel_saver.add_new_sheet(["method", "count steps", "function value", "memory", "time"], "Gauss Newton vs Dogleg")
+    excel_saver.add_new_sheet(["method", "count steps", "function value", "memory", "time"], "Gauss Newton vs Others")
     comparing_between(
         [
             [lambda x: x[0] - 5, lambda x: x[1] + 6],
-            [lambda x: 10 * (x[0] - x[1]) + 3, lambda x: x[0] * (x[1] - 2) + x[1]]
+            [lambda x: x[0] * (x[0] + 3 * x[1]) + x[1] * (3 - x[0]),
+             lambda x: (x[0] + 2) + x[1] * (4 - x[0] * 4) + x[1] * 3],
+            [lambda x: (x[0] + 4) + (x[1] * 2 + x[0] - 9), lambda x: x[0] * 2 + x[1] + (x[0] - 3)],
+            [lambda x: 1 - x[0], lambda x: 10 * (x[1] - x[0] ** 2)]
         ],
         [
             lambda funcs, start_x: gauss_newton(start_x, funcs, store_points=True),
             lambda funcs, start_x: dogleg(lambda x: sum([funcs[i](x) ** 2 for i in range(len(funcs))]), start_x,
-                                          store_points=True)
-        ],
-        ["Gauss Newton", "Dogleg"], is_array_funcs=True
-    )
-
-
-def gauss_newton_vs_bfgs():
-    excel_saver.add_new_sheet(["method", "count steps", "function value", "memory", "time"], "Gauss Newton vs BFGS")
-    comparing_between(
-        [
-
-        ],
-        [
-            lambda funcs, start_x: gauss_newton(start_x, funcs, store_points=True),
-            lambda funcs, start_x: bfgs(lambda x: sum([funcs[i](x) ** 2] for i in range(len(funcs))), start_x,
-                                        store_points=True)
-        ],
-        ["Gauss Newton", "BFGS"], is_array_funcs=True
-    )
-
-
-def gauss_newton_vs_lbfgs():
-    excel_saver.add_new_sheet(["method", "count steps", "function value", "memory", "time"], "Gauss Newton vs LBFGS")
-    comparing_between(
-        [
-
-        ],
-        [
-            lambda funcs, start_x: gauss_newton(start_x, funcs, store_points=True),
-            lambda funcs, start_x: lbfgs(lambda x: sum([funcs[i](x) ** 2] for i in range(len(funcs))), start_x,
+                                          store_points=True),
+            lambda funcs, start_x: bfgs(lambda x: sum([funcs[i](x) ** 2 for i in range(len(funcs))]), start_x,
+                                        store_points=True),
+            lambda funcs, start_x: lbfgs(lambda x: sum([funcs[i](x) ** 2 for i in range(len(funcs))]), start_x,
                                          store_points=True)
         ],
-        ["Gauss Newton", "LBFGS"], is_array_funcs=True
+        ["Gauss Newton", "Dogleg", "BFGS", "LBFGS"], is_array_funcs=True
     )
 
 
-def dogleg_vs_bfgs():
-    excel_saver.add_new_sheet(["method", "count steps", "function value", "memory", "time"], "Dogleg vs BFGS")
+def dogleg_vs_bfgs_vs_lbfgs():
+    excel_saver.add_new_sheet(["method", "count steps", "function value", "memory", "time"], "Dogleg vs BFGS vs LBFGS")
     comparing_between(
         [
-
+            lambda x: (1 - x[0]) ** 2 + 100 * (x[1] - x[0] * 2) ** 2,
+            # lambda x:
         ],
         [
             lambda f, start_x: dogleg(f, start_x, store_points=True),
-            lambda f, start_x: bfgs(f, start_x, store_points=True)
-        ],
-        ["Dogleg", "BFGS"]
-    )
-
-
-def dogleg_vs_lbfgs():
-    excel_saver.add_new_sheet(["method", "count steps", "function value", "memory", "time"], "Dogleg vs LBFGS")
-    comparing_between(
-        [
-
-        ],
-        [
-            lambda f, start_x: dogleg(f, start_x, store_points=True),
-            lambda f, start_x: lbfgs(f, start_x, store_points=True)
-        ],
-        ["Dogleg", "LBFGS"]
-    )
-
-
-def bfgs_vs_lbfgs():
-    excel_saver.add_new_sheet(["method", "count steps", "function value", "memory", "time"], "BFGS vs LBFGS")
-    comparing_between(
-        [
-
-        ],
-        [
             lambda f, start_x: bfgs(f, start_x, store_points=True),
             lambda f, start_x: lbfgs(f, start_x, store_points=True)
         ],
-        ["BFGS", "LBFGS"]
+        ["Dogleg", "BFGS", "LBFGS"]
     )
 
 
 excel_saver = ExcellSaver()
-gauss_newton_vs_prev()
-# dogleg_vs_prev()
+# gauss_newton_vs_prev()
+dogleg_vs_prev()
 # bfgs_vs_prev()
 # lbfgs_vs_prev()
-# gauss_newton_vs_dogleg()
-# gauss_newton_vs_bfgs()
-# dogleg_vs_bfgs()
-# excel_saver.create_excel("metrics.xlsx")
+# gauss_newton_vs_others()
+# dogleg_vs_bfgs_vs_lbfgs()
+excel_saver.create_excel("metrics.xlsx")
