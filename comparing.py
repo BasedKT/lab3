@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from excel import ExcellSaver
-from linreg import sgd_handler, Methods, visualise_approximation, gen_linear_reg
+from linreg import sgd_handler, Methods, visualise_approximation, gen_linear_reg, LearningRateScheduling
 from main import dogleg, gauss_newton, bfgs, lbfgs
 
 
@@ -69,17 +69,17 @@ def linreg_comparing(linreg_func, title, sheet_title, visualize_prev_methods=Tru
 
     excel_saver.add_new_sheet(["method", "count steps", "function", "loss", "memory", "time"], sheet_title)
 
-    count_2d_examples = 1
-    count_other_examples = 1
+    count_2d_examples = 0
+    count_other_examples = 3
     count_points = random.randint(30, 100)
     linregs_examples = []
     for i in range(count_2d_examples + count_other_examples):
         count_variables = 2 if i < count_2d_examples else random.randint(3, 6)
         linregs_examples.append((
-            gen_linear_reg(count_variables - 1, count_points, -2., 2., -2., 2., 2.),
+            gen_linear_reg(count_variables - 1, count_points, -2., 2., -2., 2., 4.),
             str_func([1. for _ in range(count_variables)], [float(k) for k in range(count_variables)])
         ))
-    lr = lambda *args: 0.01
+    lr = lambda *args: 0.1
 
     for linreg, f_str in linregs_examples:
         start_x = np.array([float(random.randint(5, 20)) for _ in range(len(linreg.W))])
@@ -97,7 +97,10 @@ def linreg_comparing(linreg_func, title, sheet_title, visualize_prev_methods=Tru
         if visualize_prev_methods:
             for method in Methods:
                 def sgd_caller():
-                    sgd_handler(linreg, lr, method, store_points=True)
+                    if method == Methods.AdaGrad or method == Methods.RMSprop or method == Methods.Adam:
+                        sgd_handler(linreg, lr, method, store_points=True)
+                    else:
+                        sgd_handler(linreg, lr, method, lrs=LearningRateScheduling.Stepwise, store_points=True)
                     return linreg.W_points
 
                 refresh_linreg(linreg, start_x)

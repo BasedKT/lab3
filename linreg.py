@@ -104,8 +104,8 @@ def sgd(lin_reg, lr, lrs, batch, max_num_of_step, beta_1, beta_2, eps_adam, is_c
     return i
 
 
-def sgd_handler(lin_reg, lr, method, lrs=LearningRateScheduling.Classic, batch=1, beta_1=0.9, beta_2=0.999,
-                eps_adam=10 ** -8, max_num_of_step=5000, store_points=False):
+def sgd_handler(lin_reg, lr, method, lrs=LearningRateScheduling.Classic, batch=1, beta_1=0.9, beta_2=0.9999,
+                eps_adam=10 ** -9, max_num_of_step=5000, store_points=False):
     match method:
         case Methods.Classic:
             return sgd(lin_reg, lr, lrs, batch, max_num_of_step, beta_1=0., beta_2=1., eps_adam=1,
@@ -135,7 +135,7 @@ def lrs_step(decay, epoch_update):
     return lambda lr, epoch: lr * (decay ** (epoch // epoch_update))
 
 
-def lrs_handler(lrs, epoch_update=20):
+def lrs_handler(lrs, epoch_update=10):
     match lrs:
         case LearningRateScheduling.Classic:
             return lambda lr, epoch: lr
