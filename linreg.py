@@ -22,6 +22,7 @@ def sign(x):
 
 class LinearRegression:
     def __init__(self, T, W, X, Y, regularization=Regularization.WithoutRegularization, l1=0.1, l2=0.1):
+        self.T_funcs = T
         self.T = np.array([T[i % len(T)](X[i // len(T)]) for i in range(len(T) * len(X))]).reshape(len(X), len(T))
         self.W = W
         self.X = X
@@ -140,9 +141,9 @@ def lrs_handler(lrs, epoch_update=20):
 
 def visualise_approximation(linreg, title):
     x = np.linspace(min(linreg.X), max(linreg.X), 1000)
-    y = sum([linreg.W[i] * (x ** i) for i in range(len(linreg.W))])
+    y = sum([linreg.W[i] * linreg.T_funcs[i](x) for i in range(len(linreg.W))])
     analys_w = linreg.analytical_solution()
-    analys_y = sum([analys_w[i] * (x ** i) for i in range(len(analys_w))])
+    analys_y = sum([analys_w[i] * linreg.T_funcs[i](x) for i in range(len(analys_w))])
     plt.plot(x, y, 'r')
     plt.plot(x, analys_y, 'b--')
     plt.plot(linreg.X, linreg.Y, 'og', linestyle='None')
@@ -152,8 +153,11 @@ def visualise_approximation(linreg, title):
     plt.show()
 
 
-def poly_array(coeffs):
-    return np.array([lambda x, i=i: coeffs[i] * (x ** i) for i in range(len(coeffs))])
+def poly_array(coeffs, powers=None):
+    if powers is None:
+        powers = [i for i in range(len(coeffs))]
+
+    return np.array([lambda x, i=i: coeffs[i] * (x ** powers[i]) for i in range(len(coeffs))])
 
 
 def poly(poly_arr):
@@ -171,8 +175,11 @@ def generate_data(num_of_points, dimension, coeffs_left, coeffs_right, x_left, x
     return [np.array(X), np.array(Y), coeffs]
 
 
-def gen_linear_reg(dimension, num_of_points, coeffs_left, coeffs_right, x_left, x_right, deviation, own_coeffs=None):
-    T = np.array(poly_array(np.ones(dimension + 1)))
+def gen_linear_reg(dimension, num_of_points, coeffs_left, coeffs_right, x_left, x_right, deviation, own_coeffs=None,
+                   coeffs_T=None, powers_T=None):
+    if coeffs_T is None:
+        coeffs_T = np.ones(dimension + 1)
+    T = np.array(poly_array(coeffs_T, powers_T))
     X, Y, coeffs = generate_data(num_of_points, dimension, coeffs_left, coeffs_right, x_left, x_right, deviation,
                                  own_coeffs)
     W = np.ones(len(coeffs))
